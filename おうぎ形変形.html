@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>おうぎ形の面積</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f4f8; padding: 20px; }
+        canvas { background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .controls { background: white; padding: 25px; border-radius: 12px; width: 500px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .group { margin-bottom: 15px; }
+        label { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 5px; }
+        input { width: 100%; cursor: pointer; }
+        span { color: #27ae60; }
+    </style>
+</head>
+<body>
+
+    <h2>おうぎ形を分解すると何になる？</h2>
+    <canvas id="canvas" width="800" height="450"></canvas>
+
+    <div class="controls">
+        <div class="group">
+            <label>元の扇形の中心角: <span id="angleVal">180</span>°</label>
+            <input type="range" id="angleRange" min="30" max="360" value="180">
+        </div>
+        <div class="group">
+            <label>分割数（偶数）: <span id="splitVal">20</span></label>
+            <input type="range" id="splitRange" min="4" max="100" value="20" step="2">
+        </div>
+        <div class="group">
+            <label>変形プロセス: <span id="morphVal">0</span>%</label>
+            <input type="range" id="morphRange" min="0" max="100" value="0">
+        </div>
+    </div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+const angleSlider = document.getElementById('angleRange');
+const splitSlider = document.getElementById('splitRange');
+const morphSlider = document.getElementById('morphRange');
+
+const radius = 160;
+
+// 色の設定：少し濃くした黄色と緑色
+const color1 = '#f1c40f'; // ひまわりイエロー
+const color2 = '#2ecc71'; // 若草グリーン（エメラルド）
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    const totalAngleDeg = parseInt(angleSlider.value);
+    const n = parseInt(splitSlider.value);
+    const morph = morphSlider.value / 100;
+
+    document.getElementById('angleVal').innerText = totalAngleDeg;
+    document.getElementById('splitVal').innerText = n;
+    document.getElementById('morphVal').innerText = morphSlider.value;
+
+    const totalAngleRad = totalAngleDeg * (Math.PI / 180);
+    const pieceAngle = totalAngleRad / n;
+    const halfBase = radius * Math.sin(pieceAngle / 2);
+
+    ctx.save();
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+
+    for (let i = 0; i < n; i++) {
+        const isEven = i % 2 === 0;
+        const currentAngle = (-totalAngleRad / 2) + (i * pieceAngle) + (pieceAngle / 2);
+
+        const targetX = (i - (n - 1) / 2) * halfBase;
+        const targetRot = isEven ? 0 : Math.PI;
+
+        const x = targetX * morph;
+        const y = 0;
+
+        let diff = targetRot - currentAngle;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        const rot = currentAngle + diff * morph;
+
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rot);
+
+        const offsetY = -radius/2 * morph;
+
+        ctx.beginPath();
+        ctx.moveTo(0, offsetY); 
+        ctx.arc(0, offsetY, radius, Math.PI/2 - pieceAngle/2, Math.PI/2 + pieceAngle/2);
+        ctx.closePath();
+        
+        ctx.fillStyle = isEven ? color1 : color2;
+        ctx.fill();
+
+        // 境界線の処理
+        ctx.strokeStyle = "rgba(0,0,0," + (0.15 * (1 - morph)) + ")";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        ctx.restore();
+    }
+    ctx.restore();
+    
+    requestAnimationFrame(draw);
+}
+
+draw();
+</script>
+</body>
+</html>
